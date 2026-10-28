@@ -1,1 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Jashpur Foodies - Order Food Online</title>
+  
+  <!-- Tailwind CSS & FontAwesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Firebase SDK (v10 Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-functions-compat.js"></script>
+
+  <style>
+    body { 
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent; 
+    }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .step-active { background-color: #ea580c; border-color: #ea580c; color: white; }
+    .step-done { background-color: #10b981; border-color: #10b981; color: white; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen pb-24 md:pb-10">
+ <!-- ================= AUTH MODAL / VIEW ================= -->
+  <div id="authContainer" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 max-h-[92vh] overflow-y-auto hide-scrollbar">
+      <div class="text-center mb-6">
+        <div class="w-14 h-14 bg-orange-600 rounded-2xl mx-auto flex items-center justify-center text-white text-2xl shadow-lg shadow-orange-500/30 mb-3">
+          <i class="fa-solid fa-burger"></i>
+        </div>
+        <h2 class="text-2xl font-black text-slate-900 tracking-tight">Jashpur Foodies</h2>
+        <p class="text-xs text-slate-500 mt-1 font-medium">Delicious meals delivered right to your door</p>
+      </div>
+
+      <!-- Auth Tabs -->
+      <div class="flex bg-slate-100 p-1 rounded-xl mb-6 text-xs font-bold">
+        <button id="tabBtnLogin" onclick="toggleAuthTab('login')" class="flex-1 py-2 rounded-lg bg-white shadow-sm text-orange-600 transition">Sign In</button>
+        <button id="tabBtnSignup" onclick="toggleAuthTab('signup')" class="flex-1 py-2 rounded-lg text-slate-500 transition">Create Account</button>
+      </div>
+
+      <div id="authAlert" class="hidden mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl flex items-center gap-2">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span id="authAlertMsg">Authentication error</span>
+      </div>
+
+      <!-- SIGN IN FORM -->
+      <form id="loginForm" class="space-y-3.5">
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Email Address</label>
+          <input type="email" id="loginEmail" required placeholder="you@email.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Password</label>
+          <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+        <button type="submit" class="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-orange-600/30 transition flex items-center justify-center gap-2 mt-4">
+          <span>Sign In</span>
+          <i class="fa-solid fa-arrow-right text-xs"></i>
+           </button>
+      </form>
+
+      <!-- SIGN UP FORM -->
+      <form id="signupForm" class="hidden space-y-3">
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Full Name</label>
+          <input type="text" id="regName" required placeholder="John Doe" class="w-full px-4 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Email Address</label>
+          <input type="email" id="regEmail" required placeholder="you@email.com" class="w-full px-4 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Phone Number</label>
+          <input type="tel" id="regPhone" required placeholder="+91 98765 43210" class="w-full px-4 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Default Delivery Address</label>
+          <textarea id="regAddress" required rows="2" placeholder="House #, Street, Landmark, City, PIN" class="w-full px-4 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Password</label>
+          <input type="password" id="regPassword" required placeholder="Minimum 6 characters" class="w-full px-4 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+        <button type="submit" class="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-orange-600/30 transition flex items-center justify-center gap-2 mt-4">
+          <span>Complete Registration</span>
+          <i class="fa-solid fa-check text-xs"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+   <!-- ================= APP HEADER ================= -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 sm:px-8">
+    <div class="max-w-4xl mx-auto flex items-center justify-between gap-4">
+      
+      <!-- Brand & Address Badge -->
+      <div class="flex items-center gap-3">
+        <div onclick="navigateTo('home')" class="cursor-pointer flex items-center gap-2">
+          <div class="w-9 h-9 rounded-xl bg-orange-600 text-white flex items-center justify-center font-black text-base shadow-md shadow-orange-600/30">JF</div>
+          <div>
+            <h1 class="font-black text-slate-900 tracking-tight text-base leading-none">Jashpur Foodies</h1>
+            <p id="topAddressBar" class="text-[11px] text-slate-500 font-medium truncate max-w-[170px] sm:max-w-xs mt-1">
+              <i class="fa-solid fa-location-dot text-orange-500 mr-0.5"></i> Select location
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Header Actions -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Cart Floating Badge -->
+        <button onclick="toggleCartDrawer(true)" class="relative p-2.5 rounded-xl bg-orange-50 text-orange-600 hover:bg-orange-100 transition">
+          <i class="fa-solid fa-bag-shopping text-base"></i>
+          <span id="cartCountBadge" class="hidden absolute -top-1 -right-1 bg-orange-600 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">0</span>
+        </button>
+
+        <!-- Profile Shortcut for desktop -->
+        <button onclick="navigateTo('profile')" class="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center justify-center text-sm font-bold">
+          <i class="fa-regular fa-user"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+   <!-- ================= BROADCAST NOTIFICATIONS BANNER ================= -->
+  <div id="broadcastBanner" class="hidden bg-gradient-to-r from-orange-600 to-amber-600 text-white text-xs px-4 py-2 font-medium">
+    <div class="max-w-4xl mx-auto flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 overflow-hidden truncate">
+        <i class="fa-solid fa-bell text-xs animate-bounce"></i>
+        <span id="broadcastText" class="truncate">Delivery update notice</span>
+      </div>
+      <button onclick="document.getElementById('broadcastBanner').classList.add('hidden')" class="text-white/80 hover:text-white text-xs shrink-0">&times;</button>
+    </div>
+  </div>
+
+  <!-- ================= MAIN APP CONTAINER ================= -->
+  <main class="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+    
+    <!-- VIEW: 1. HOME / RESTAURANTS BROWSER -->
+    <section id="viewHome" class="space-y-6">
+      
+      <!-- Search & Banner -->
+      <div class="bg-gradient-to-br from-orange-500 to-amber-500 rounded-3xl p-5 sm:p-7 text-white shadow-lg shadow-orange-500/20 relative overflow-hidden">
+        <div class="relative z-10 max-w-sm space-y-2">
+          <span class="inline-block px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-full text-[10px] font-bold uppercase tracking-wider">Fast & Fresh</span>
+          <h2 class="text-2xl sm:text-3xl font-black leading-tight">Craving something tasty today?</h2>
+          <p class="text-xs text-orange-100 font-medium">Pay your way: Cash on Delivery, PhonePe or Google Pay.</p>
+        </div>
+        <div class="absolute right-0 bottom-0 opacity-15 translate-x-6 translate-y-6 pointer-events-none">
+          <i class="fa-solid fa-pizza-slice text-9xl"></i>
+        </div>
+      </div>
+
+      <!-- Search Input -->
+      <div class="relative">
+        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+          <i class="fa-solid fa-magnifying-glass text-sm"></i>
+        </span>
+        <input type="text" id="searchInput" oninput="filterRestaurants()" placeholder="Search restaurants, cuisines..."
+          class="w-full pl-10 pr-4 py-3 bg-white rounded-2xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm" />
+      </div>
+       <!-- Approved Restaurants Grid -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-extrabold text-base text-slate-800">Featured Restaurants</h3>
+          <span id="restaurantsCount" class="text-xs text-slate-400 font-semibold">0 open</span>
+        </div>
+
+        <div id="restaurantsList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <!-- Populated dynamically -->
+          <div class="col-span-full py-12 text-center text-slate-400 text-xs">
+            <i class="fa-solid fa-spinner fa-spin text-xl mb-2 text-orange-500"></i>
+            <p>Loading approved food partners...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: 2. RESTAURANT MENU VIEW -->
+    <section id="viewRestaurantMenu" class="hidden space-y-5">
+      <!-- Back button & header -->
+      <div class="flex items-center gap-3">
+        <button onclick="navigateTo('home')" class="w-10 h-10 rounded-2xl bg-white border border-slate-200 text-slate-600 hover:text-orange-600 flex items-center justify-center transition shadow-sm">
+          <i class="fa-solid fa-chevron-left text-sm"></i>
+        </button>
+        <div>
+          <h2 id="menuRestName" class="text-xl font-extrabold text-slate-900 leading-tight">Restaurant Name</h2>
+          <p id="menuRestCuisine" class="text-xs text-orange-600 font-semibold">Cuisine info</p>
+        </div>
+      </div>
+
+      <!-- Restaurant Info Card -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center gap-3 text-xs text-slate-500">
+        <i class="fa-solid fa-location-dot text-orange-500 text-base"></i>
+        <span id="menuRestAddress" class="truncate">Address not provided</span>
+      </div>
+
+      <!-- Menu Items List -->
+      <div>
+        <h3 class="font-extrabold text-base text-slate-800 mb-3">Menu Offerings</h3>
+        <div id="menuItemsList" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Dynamic Items -->
+        </div>
+      </div>
+    </section>
+    <!-- VIEW: 3. ORDERS (TRACKING & HISTORY) -->
+    <section id="viewOrders" class="hidden space-y-5">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-extrabold text-slate-900">Your Orders</h2>
+          <p class="text-xs text-slate-500">Live order status and past deliveries</p>
+        </div>
+        <button onclick="loadUserOrders()" class="text-xs font-bold text-orange-600 hover:text-orange-700">
+          <i class="fa-solid fa-rotate-right mr-1"></i> Refresh
+        </button>
+      </div>
+
+      <!-- Container for Active / Past orders -->
+      <div id="ordersContainer" class="space-y-4">
+        <div class="py-12 text-center text-slate-400 text-xs">
+          <i class="fa-solid fa-receipt text-3xl mb-2 text-slate-300"></i>
+          <p>No orders placed yet.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: 4. PROFILE VIEW -->
+    <section id="viewProfile" class="hidden space-y-5">
+      <div>
+        <h2 class="text-xl font-extrabold text-slate-900">My Profile</h2>
+        <p class="text-xs text-slate-500">Manage delivery contact information</p>
+      </div>
+
+      <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+        <form id="profileForm" class="space-y-4">
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Email (Read Only)</label>
+            <input type="email" id="profileEmail" disabled class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-500 cursor-not-allowed" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Full Name</label>
+            <input type="text" id="profileName" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Phone Number</label>
+            <input type="tel" id="profilePhone" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Default Delivery Address</label>
+            <textarea id="profileAddress" rows="3" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
+          </div>
+          <button type="submit" class="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-orange-600/30 transition">
+            Save Profile Updates
+          </button>
+          </form>
+
+        <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+          <span class="text-xs text-slate-400">Account session</span>
+          <button onclick="handleLogout()" class="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 transition">
+            <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= CART / CHECKOUT SLIDE-OVER DRAWER ================= -->
+  <div id="cartDrawer" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex justify-end">
+    <div class="bg-white w-full max-w-md h-full flex flex-col shadow-2xl">
+      
+      <!-- Drawer Header -->
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center">
+            <i class="fa-solid fa-basket-shopping text-sm"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-base text-slate-900">Your Basket</h3>
+            <span id="cartRestTitle" class="text-[11px] text-orange-600 font-semibold block leading-none">Jashpur Foodies Cart</span>
+          </div>
+        </div>
+        <button onclick="toggleCartDrawer(false)" class="text-slate-400 hover:text-slate-600 p-2"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <!-- Cart Items Body -->
+      <div id="cartItemsContainer" class="flex-1 overflow-y-auto p-4 space-y-3 hide-scrollbar">
+        <!-- Rendered dynamically -->
+        <p class="text-center py-10 text-slate-400 text-xs">Your basket is currently empty.</p>
+      </div>
+
+      <!-- Checkout Details & Payment Options -->
+      <div class="p-4 border-t border-slate-100 bg-slate-50 space-y-3">
+        <!-- Delivery Address summary -->
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Confirm Delivery Address</label>
+          <input type="text" id="checkoutAddress" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white" placeholder="Delivery Address" />
+        </div>
+        <div>
+         <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Contact Phone</label>
+          <input type="tel" id="checkoutPhone" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white" placeholder="Phone Number" />
+        </div>
+
+        <!-- Delivery distance and fee rules -->
+        <div class="p-3 bg-white border border-slate-200 rounded-xl space-y-2 text-xs">
+          <label for="deliveryDistanceKm" class="block font-bold text-slate-700">Restaurant se aapke ghar tak distance</label>
+          <button type="button" onclick="calculateDeliveryDistance()" class="w-full py-2 px-3 rounded-lg bg-orange-600 text-white font-bold">📍 Current location se road distance calculate karein</button>
+          <p id="distanceStatus" class="text-[11px] text-slate-600">Accurate road distance ke liye restaurant ko apni location save karni hogi aur customer ko ghar par location allow karni hogi.</p>
+          <p class="text-[10px] text-slate-500">Agar aap ghar par nahi hain, to home/delivery location par jaakar location calculate karein.</p>
+          <select id="deliveryDistanceKm" onchange="actualDeliveryDistanceKm=null; updateCartUI()" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs">
+            <option value="1">0–2 km</option>
+            <option value="3" selected>More than 2–4 km</option>
+            <option value="5">More than 4–6 km</option>
+            <option value="7">More than 6–8 km</option>
+            <option value="9">More than 8 km — manual confirmation</option>
+          </select>
+          <div class="flex justify-between"><span class="text-slate-500">Delivery charge</span><strong id="deliveryFeeDisplay">₹25</strong></div>
+          <div class="flex justify-between"><span class="text-slate-500">Food subtotal</span><strong id="foodSubtotalDisplay">₹0</strong></div>
+          <p id="deliveryRuleNotice" class="text-[10px] text-slate-500">Distance is an estimate. Confirm the road distance before accepting the order.</p>
+        </div>
+
+        <!-- Payment selection: online payments require a configured server-side gateway -->
+        <div class="p-3 bg-white border border-slate-200 rounded-xl space-y-2 text-xs">
+          <p class="font-bold text-slate-700">Choose Payment Method</p>
+          <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-100">
+            <input type="radio" name="paymentMethod" value="COD" checked onchange="updatePaymentButton()">
+            <i class="fa-solid fa-money-bill-wave text-emerald-600"></i><span>Cash on Delivery</span>
+          </label>
+          <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-100">
+            <input type="radio" name="paymentMethod" value="PHONEPE" onchange="updatePaymentButton()">
+            <span class="font-extrabold text-purple-700">PhonePe</span><span>UPI</span>
+          </label>
+          <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-100">
+            <input type="radio" name="paymentMethod" value="GPAY" onchange="updatePaymentButton()">
+            <span class="font-extrabold text-blue-700">Google Pay</span><span>UPI</span>
+          </label>
+          <p class="text-[10px] text-slate-500">UPI ID: <strong>9039290223@axl</strong>. PhonePe / Google Pay will open with the order amount. Payment is not automatically verified; the restaurant must confirm receipt before treating the order as paid.</p>
+        </div>
+
+        <!-- Subtotal / Total -->
+        <div class="flex items-center justify-between text-sm pt-2">
+          <span class="font-bold text-slate-600">Total Payable:</span>
+          <span id="cartTotalSum" class="text-xl font-black text-slate-900">₹0</span>
+        </div>
+
+        <!-- Order Button -->
+        <button id="btnPlaceOrder" onclick="placeOrder()" class="w-full py-3.5 bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-orange-600/30 transition flex items-center justify-center gap-2">
+          <span>Place Order</span>
+          <i class="fa-solid fa-arrow-right text-xs"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= RATING MODAL ================= -->
+  <div id="ratingModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4">
+      <div class="w-12 h-12 bg-amber-50 text-amber-500 rounded-2xl mx-auto flex items-center justify-center text-xl">
+        <i class="fa-solid fa-star"></i>
+      </div>
+      <div>
+        <h3 class="font-black text-lg text-slate-900">Rate your experience</h3>
+        <p class="text-xs text-slate-500">How was your meal and delivery?</p>
+      </div>
+
+      <div class="flex justify-center gap-2 text-2xl text-slate-300 py-1" id="starContainer">
+        <i class="fa-solid fa-star cursor-pointer hover:text-amber-400" onclick="setRating(1)"></i>
+        <i class="fa-solid fa-star cursor-pointer hover:text-amber-400" onclick="setRating(2)"></i>
+        <i class="fa-solid fa-star cursor-pointer hover:text-amber-400" onclick="setRating(3)"></i>
+        <i class="fa-solid fa-star cursor-pointer hover:text-amber-400" onclick="setRating(4)"></i>
+        <i class="fa-solid fa-star cursor-pointer hover:text-amber-400" onclick="setRating(5)"></i>
+      </div>
+      
+      <textarea id="reviewText" rows="2" placeholder="Write a short review..." class="w-full p-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
+      <div class="flex gap-2">
+        <button onclick="closeRatingModal()" class="flex-1 py-2 text-xs font-bold text-slate-500 bg-slate-100 rounded-xl">Cancel</button>
+        <button onclick="submitReview()" class="flex-1 py-2 text-xs font-bold text-white bg-orange-600 rounded-xl shadow-md shadow-orange-600/30">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MOBILE BOTTOM NAVIGATION ================= -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2.5 flex items-center justify-around">
+    <button onclick="navigateTo('home')" class="nav-btn active flex flex-col items-center gap-0.5 text-orange-600" id="navBtn-home">
+      <i class="fa-solid fa-house text-lg"></i>
+      <span class="text-[10px] font-bold">Home</span>
+    </button>
+    <button onclick="navigateTo('orders')" class="nav-btn flex flex-col items-center gap-0.5 text-slate-400 hover:text-orange-600 transition" id="navBtn-orders">
+      <i class="fa-solid fa-clock-rotate-left text-lg"></i>
+      <span class="text-[10px] font-bold">Orders</span>
+    </button>
+    <button onclick="toggleCartDrawer(true)" class="relative flex flex-col items-center gap-0.5 text-slate-400 hover:text-orange-600 transition">
+      <i class="fa-solid fa-bag-shopping text-lg"></i>
+      <span class="text-[10px] font-bold">Basket</span>
+      <span id="navCartCount" class="hidden absolute -top-1 -right-2 bg-orange-600 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">0</span>
+    </button>
+    <button onclick="navigateTo('profile')" class="nav-btn flex flex-col items-center gap-0.5 text-slate-400 hover:text-orange-600 transition" id="navBtn-profile">
+      <i class="fa-solid fa-user text-lg"></i>
+      <span class="text-[10px] font-bold">Profile</span>
+    </button>
+  </nav>
+
+  <!-- ================= LOGIC & FIREBASE INTEGRATION ================= -->
+  <script>
+    // 1. FIREBASE CONFIGURATION (Keep consistent across panels)
+    const firebaseConfig = {
+  apiKey: "AIzaSyAOxCuCZUMtrU4RN4eW5SrUZ5FvIbOh5PI",
+  authDomain: "khana-khazana-279b1.firebaseapp.com",
+  databaseURL: "https://khana-khazana-279b1-default-rtdb.firebaseio.com",
+  projectId: "khana-khazana-279b1",
+  storageBucket: "khana-khazana-279b1.firebasestorage.app",
+  messagingSenderId: "580734751511",
+  appId: "1:580734751511:web:135d0f30ec5dddca8c5d52"
+};
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+
+    const auth = firebase.auth();
+    const db = firebase.database();
+    const functions = firebase.app().functions("asia-south1");
+
+    // App State
+    let currentUser = null;
+    let customerProfile = null;
+    let approvedRestaurants = {};
+    let activeRestaurantId = null;
+    let activeRestaurantMenu = {};
+    let cart = []; // Array of { id, name, price, quantity, imageUrl }
+    let cartRestaurantId = null;
+    let customerDeliveryCoords = null;
+    let actualDeliveryDistanceKm = null;
+    let activeOrders = {};
+    let ratingOrderId = null;
+    let selectedRatingStars = 5;
+
+    // --- 2. AUTH FLOW ---
+    auth.onAuthStateChanged((user) => {
+      const authContainer = document.getElementById("authContainer");
+      if (user) {
+        currentUser = user;
+        authContainer.classList.add("hidden");
+        loadCustomerProfile(user.uid);
+        initRealtimeApp();
+        handlePhonePeReturn(user);
+      } else {
+        currentUser = null;
+        customerProfile = null;
+        authContainer.classList.remove("hidden");
+      }
+    });
+     function toggleAuthTab(tab) {
+      const isLogin = tab === 'login';
+      document.getElementById("tabBtnLogin").className = isLogin 
+        ? "flex-1 py-2 rounded-lg bg-white shadow-sm text-orange-600 transition" 
+        : "flex-1 py-2 rounded-lg text-slate-500 transition";
+      document.getElementById("tabBtnSignup").className = !isLogin 
+        ? "flex-1 py-2 rounded-lg bg-white shadow-sm text-orange-600 transition" 
+        : "flex-1 py-2 rounded-lg text-slate-500 transition";
+
+      document.getElementById("loginForm").classList.toggle("hidden", !isLogin);
+      document.getElementById("signupForm").classList.toggle("hidden", isLogin);
+      document.getElementById("authAlert").classList.add("hidden");
+    }
+
+    // SIGN IN
+    document.getElementById("loginForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("loginEmail").value.trim();
+      const pass = document.getElementById("loginPassword").value.trim();
+      const alertBox = document.getElementById("authAlert");
+
+      alertBox.classList.add("hidden");
+      auth.signInWithEmailAndPassword(email, pass)
+        .catch(err => {
+          document.getElementById("authAlertMsg").innerText = err.message;
+          alertBox.classList.remove("hidden");
+        });
+    });
+
+    // SIGN UP -> CREATES /customers/{uid}
+    document.getElementById("signupForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = document.getElementById("regName").value.trim();
+      const email = document.getElementById("regEmail").value.trim();
+      const phone = document.getElementById("regPhone").value.trim();
+      const address = document.getElementById("regAddress").value.trim();
+      const password = document.getElementById("regPassword").value.trim();
+      const alertBox = document.getElementById("authAlert");
+      alertBox.classList.add("hidden");
+
+      auth.createUserWithEmailAndPassword(email, password)
+        .then((cred) => {
+          // Save customer details in /customers/{uid}
+          return db.ref(`customers/${cred.user.uid}`).set({
+            name,
+            email,
+            phone,
+            address,
+            createdAt: Date.now()
+          });
+        })
+        .catch((err) => {
+          document.getElementById("authAlertMsg").innerText = err.message;
+          alertBox.classList.remove("hidden");
+        });
+    });
+
+    function handleLogout() {
+      if (confirm("Do you wish to log out?")) {
+        auth.signOut();
+      }
+    }
+
+    // --- 3. CUSTOMER PROFILE ---
+    function loadCustomerProfile(uid) {
+      db.ref(`customers/${uid}`).on("value", (snap) => {
+        customerProfile = snap.val() || {};
+        document.getElementById("topAddressBar").innerHTML = `<i class="fa-solid fa-location-dot text-orange-500 mr-1"></i> ${escapeHtml(customerProfile.address || "Add address")}`;
+        
+        // Fill profile inputs
+        document.getElementById("profileEmail").value = currentUser.email || "";
+        document.getElementById("profileName").value = customerProfile.name || "";
+        document.getElementById("profilePhone").value = customerProfile.phone || "";
+        document.getElementById("profileAddress").value = customerProfile.address || "";
+
+        // Fill checkout inputs if empty
+        if (!document.getElementById("checkoutAddress").value) {
+          document.getElementById("checkoutAddress").value = customerProfile.address || "";
+        }
+        if (!document.getElementById("checkoutPhone").value) {
+          document.getElementById("checkoutPhone").value = customerProfile.phone || "";
+        }
+      });
+    }
+     document.getElementById("profileForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (!currentUser) return;
+      
+      const name = document.getElementById("profileName").value.trim();
+      const phone = document.getElementById("profilePhone").value.trim();
+      const address = document.getElementById("profileAddress").value.trim();
+
+      db.ref(`customers/${currentUser.uid}`).update({
+        name, phone, address, updatedAt: Date.now()
+      }).then(() => alert("Profile updated successfully!"))
+        .catch(err => alert("Error: " + err.message));
+    });
+
+    // --- 4. REALTIME LISTENERS (RESTAURANTS, NOTIFICATIONS, ORDERS) ---
+    function initRealtimeApp() {
+      // 1. Listen for approved restaurants only
+      db.ref("restaurants").on("value", (snap) => {
+        const all = snap.val() || {};
+        approvedRestaurants = {};
+        for (const [id, r] of Object.entries(all)) {
+          if (r.approved === true) {
+            approvedRestaurants[id] = r;
+          }
+        }
+        renderRestaurantsList();
+      });
+
+      // 2. Broadcast banner
+      db.ref("admin/notifications").limitToLast(1).on("value", (snap) => {
+        const notifs = snap.val();
+        if (notifs) {
+          const latestKey = Object.keys(notifs)[0];
+          const latest = notifs[latestKey];
+          if (latest && latest.message) {
+            document.getElementById("broadcastText").innerText = latest.message;
+            document.getElementById("broadcastBanner").classList.remove("hidden");
+          }
+        }
+      });
+       // 3. User Orders listener
+      loadUserOrders();
+    }
+
+    // --- 5. BROWSE & FILTER RESTAURANTS ---
+    function renderRestaurantsList() {
+      const container = document.getElementById("restaurantsList");
+      const list = Object.entries(approvedRestaurants);
+      document.getElementById("restaurantsCount").innerText = `${list.length} available`;
+
+      if (!list.length) {
+        container.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 text-xs">No approved restaurants in your area yet.</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(([id, r]) => `
+        <div onclick="openRestaurantMenu('${id}')" class="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between group">
+          <div>
+            <div class="h-32 w-full rounded-2xl bg-orange-100 mb-3 overflow-hidden relative flex items-center justify-center text-orange-400 text-3xl font-black">
+              <i class="fa-solid fa-utensils group-hover:scale-110 transition duration-300"></i>
+              <span class="absolute top-2 right-2 px-2.5 py-0.5 bg-white/90 backdrop-blur-sm rounded-full text-[10px] font-bold text-orange-600 shadow-sm">
+                COD Ready
+              </span>
+            </div>
+            <h4 class="font-extrabold text-base text-slate-800 group-hover:text-orange-600 transition">${escapeHtml(r.name || 'Restaurant')}</h4>
+            <p class="text-xs text-orange-600 font-medium">${escapeHtml(r.cuisine || 'Fast Food')}</p>
+            <p class="text-[11px] text-slate-400 truncate mt-1"><i class="fa-solid fa-location-dot mr-1"></i>${escapeHtml(r.address || 'Address')}</p>
+          </div>
+          <button class="mt-4 w-full py-2 bg-slate-50 hover:bg-orange-50 text-slate-700 hover:text-orange-600 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 border border-slate-100">
+            <span>View Menu</span>
+            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+    function filterRestaurants() {
+      const q = document.getElementById("searchInput").value.toLowerCase();
+      const container = document.getElementById("restaurantsList");
+      const filtered = Object.entries(approvedRestaurants).filter(([_, r]) => {
+        return (r.name || '').toLowerCase().includes(q) || (r.cuisine || '').toLowerCase().includes(q);
+      });
+
+      if (!filtered.length) {
+        container.innerHTML = `<div class="col-span-full py-8 text-center text-slate-400 text-xs">No matching restaurants found.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(([id, r]) => `
+        <div onclick="openRestaurantMenu('${id}')" class="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between group">
+          <div>
+            <div class="h-32 w-full rounded-2xl bg-orange-100 mb-3 overflow-hidden relative flex items-center justify-center text-orange-400 text-3xl font-black">
+              <i class="fa-solid fa-utensils group-hover:scale-110 transition duration-300"></i>
+            </div>
+            <h4 class="font-extrabold text-base text-slate-800 group-hover:text-orange-600 transition">${escapeHtml(r.name || 'Restaurant')}</h4>
+            <p class="text-xs text-orange-600 font-medium">${escapeHtml(r.cuisine || 'Fast Food')}</p>
+            <p class="text-[11px] text-slate-400 truncate mt-1"><i class="fa-solid fa-location-dot mr-1"></i>${escapeHtml(r.address || '')}</p>
+          </div>
+          <button class="mt-4 w-full py-2 bg-slate-50 hover:bg-orange-50 text-slate-700 hover:text-orange-600 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 border border-slate-100">
+            <span>View Menu</span>
+            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+    // --- 6. VIEW RESTAURANT MENU ---
+    function openRestaurantMenu(restaurantId) {
+      activeRestaurantId = restaurantId;
+      const rest = approvedRestaurants[restaurantId];
+      if (!rest) return;
+
+      document.getElementById("menuRestName").innerText = rest.name || "Restaurant";
+      document.getElementById("menuRestCuisine").innerText = rest.cuisine || "Multi-Cuisine";
+      document.getElementById("menuRestAddress").innerText = rest.address || "Address unavailable";
+
+      navigateTo('restaurantMenu');
+
+      // Fetch menu from /menus/{restaurantId}
+      const listContainer = document.getElementById("menuItemsList");
+      listContainer.innerHTML = `<div class="col-span-full py-8 text-center text-slate-400 text-xs">Fetching tasty menu items...</div>`;
+
+      db.ref(`menus/${restaurantId}`).on("value", (snap) => {
+        activeRestaurantMenu = snap.val() || {};
+        renderMenuItems();
+      });
+    }
+
+    function renderMenuItems() {
+      const container = document.getElementById("menuItemsList");
+      const items = Object.entries(activeRestaurantMenu);
+
+      if (!items.length) {
+        container.innerHTML = `<div class="col-span-full py-10 text-center text-slate-400 text-xs">No food items added yet by this restaurant.</div>`;
+        return;
+      }
+
+      container.innerHTML = items.map(([itemId, item]) => {
+        const isAvail = item.available !== false;
+        const imgUrl = item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80";
+
+        return `
+          <div class="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-sm flex gap-4 items-center justify-between ${!isAvail ? 'opacity-50' : ''}">
+            <div class="space-y-1 flex-1">
+              <span class="inline-block px-2 py-0.5 rounded-md bg-orange-50 text-orange-600 text-[10px] font-bold">Food Item</span>
+              <h4 class="font-extrabold text-sm text-slate-900 leading-snug">${escapeHtml(item.name || 'Dish')}</h4>
+              <p class="text-[11px] text-slate-400 line-clamp-2">${escapeHtml(item.description || 'Deliciously prepared')}</p>
+              <div class="pt-1">
+                <span class="text-sm font-black text-slate-900">₹${Number(item.price || 0)}</span>
+              </div>
+            </div>
+
+            <div class="flex flex-col items-center gap-2">
+              <div class="w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 shrink-0 border border-slate-100">
+                <img src="${escapeHtml(imgUrl)}" alt="${escapeHtml(item.name)}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80'" />
+              </div>
+              ${isAvail ? `
+                <button onclick="addToCart('${itemId}')" class="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-md shadow-orange-600/20 transition active:scale-95">
+                  + Add
+                </button>
+              ` : `
+                <span class="text-[10px] text-slate-400 font-bold">Sold Out</span>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+      // --- 7. CART & CHECKOUT ---
+    function addToCart(itemId) {
+      const item = activeRestaurantMenu[itemId];
+      if (!item) return;
+
+      // Handle single-restaurant cart restriction
+      if (cartRestaurantId && cartRestaurantId !== activeRestaurantId && cart.length > 0) {
+        if (!confirm("Your basket has items from another restaurant. Do you want to clear your current basket and start fresh?")) {
+          return;
+        }
+        cart = [];
+      }
+
+      cartRestaurantId = activeRestaurantId;
+
+      const existingIndex = cart.findIndex(c => c.id === itemId);
+      if (existingIndex > -1) {
+        cart[existingIndex].quantity += 1;
+      } else {
+        cart.push({
+          id: itemId,
+          name: item.name || "Item",
+          price: Number(item.price || 0),
+          imageUrl: item.imageUrl || "",
+          quantity: 1
+        });
+      }
+
+      updateCartUI();
+    }
+
+    function modifyCartQuantity(itemId, delta) {
+      const idx = cart.findIndex(c => c.id === itemId);
+      if (idx === -1) return;
+
+      cart[idx].quantity += delta;
+      if (cart[idx].quantity <= 0) {
+        cart.splice(idx, 1);
+      }
+
+      if (cart.length === 0) {
+        cartRestaurantId = null;
+      }
+
+      updateCartUI();
+    }
+
+    // Road distance uses restaurant/customer GPS coordinates and OSRM routing.
+    function getDeliveryPricing(foodSubtotal) {
+      const selected = actualDeliveryDistanceKm !== null ? actualDeliveryDistanceKm : Number(document.getElementById("deliveryDistanceKm")?.value || 3);
+      const manualReview = selected > 8;
+      let fee = selected <= 2 ? 15 : selected <= 4 ? 25 : selected <= 6 ? 35 : selected <= 8 ? 45 : null;
+      const freeDeliveryEligible = !manualReview && foodSubtotal >= 399 && selected <= 3;
+      if (freeDeliveryEligible) fee = 0;
+      return { distanceKm: selected, manualReview, fee, freeDeliveryEligible };
+    }
+
+    async function calculateDeliveryDistance() {
+      const status = document.getElementById('distanceStatus');
+      const restaurant = approvedRestaurants[cartRestaurantId || activeRestaurantId];
+      if (!restaurant || !Number.isFinite(Number(restaurant.latitude)) || !Number.isFinite(Number(restaurant.longitude))) {
+        status.textContent = 'Restaurant ki location abhi save nahi hai. Restaurant partner panel mein Profile > Save current restaurant location karein.';
+        alert('Pehle restaurant partner ko apni GPS location save karni hogi.');
+        return;
+      }
+      if (!window.isSecureContext && location.hostname !== 'localhost') { status.textContent = 'GPS ke liye HTTPS zaroori hai. App ko secure HTTPS URL se kholein.'; alert('Location feature ke liye HTTPS/secure app WebView zaroori hai.'); return; }
+      if (!navigator.geolocation) { status.textContent = 'Is app/WebView mein GPS support available nahi hai. Mainhopweb Android settings mein Location permission enable karke APK rebuild karein.'; alert('Is APK mein WebView GPS support/Android Location permission enable nahi hai. Mainhopweb mein Location permission enable karke naya APK banayein.'); return; }
+      status.textContent = 'Aapki location li ja rahi hai… Android permission prompt aaye to Allow karein.';
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        try {
+          customerDeliveryCoords = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+          status.textContent = 'Road distance calculate ho raha hai…';
+          const from = `${restaurant.longitude},${restaurant.latitude}`;
+          const to = `${customerDeliveryCoords.longitude},${customerDeliveryCoords.latitude}`;
+          const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${from};${to}?overview=false`);
+          if (!response.ok) throw new Error('Routing service unavailable');
+          const data = await response.json();
+          if (data.code !== 'Ok' || !data.routes || !data.routes.length) throw new Error('Route nahi mila');
+          actualDeliveryDistanceKm = data.routes[0].distance / 1000;
+          const bandValue = actualDeliveryDistanceKm <= 2 ? '1' : actualDeliveryDistanceKm <= 4 ? '3' : actualDeliveryDistanceKm <= 6 ? '5' : actualDeliveryDistanceKm <= 8 ? '7' : '9';
+          document.getElementById('deliveryDistanceKm').value = bandValue;
+          status.textContent = `Road distance: ${actualDeliveryDistanceKm.toFixed(1)} km • approx. driving route. Delivery fee updated.`;
+          updateCartUI();
+        } catch (err) {
+          actualDeliveryDistanceKm = null;
+          status.textContent = 'Road distance calculate nahi hua. Manual distance slab select karein.';
+          alert('Road distance calculate nahi ho paya. Internet check karein ya distance slab manually select karein.');
+        }
+      }, (err) => {
+        const reason = err && err.code === 1 ? 'Location permission denied. Phone Settings mein app Location permission allow karein; agar Permissions option hi nahi hai to Mainhopweb se Location permission ke saath APK rebuild karein.' : err && err.code === 2 ? 'Phone ki location/GPS unavailable hai. Location ON karke dobara try karein.' : err && err.code === 3 ? 'Location lene mein timeout hua. GPS ON karke khuli jagah par dobara try karein.' : 'Location nahi mil saki. HTTPS aur Android WebView location permission check karein.';
+        status.textContent = reason;
+        alert(reason);
+      }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+    }
+
+    function updateCartUI() {
+      const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+      const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+      // Update badge in top header and bottom nav
+      const badges = [document.getElementById("cartCountBadge"), document.getElementById("navCartCount")];
+      badges.forEach(b => {
+        if (totalCount > 0) {
+          b.innerText = totalCount;
+          b.classList.remove("hidden");
+        } else {
+          b.classList.add("hidden");
+        }
+      });
+
+      // Update drawer title
+      const restName = cartRestaurantId && approvedRestaurants[cartRestaurantId] ? approvedRestaurants[cartRestaurantId].name : "Jashpur Foodies Basket";
+      document.getElementById("cartRestTitle").innerText = restName;
+      const pricing = getDeliveryPricing(totalAmount);
+      const payable = totalAmount + (pricing.fee || 0);
+      document.getElementById("foodSubtotalDisplay").innerText = `₹${totalAmount.toFixed(2)}`;
+      document.getElementById("deliveryFeeDisplay").innerText = pricing.manualReview ? "Manual confirmation" : `₹${pricing.fee}`;
+      document.getElementById("cartTotalSum").innerText = pricing.manualReview ? `₹${totalAmount.toFixed(2)} + delivery TBD` : `₹${payable.toFixed(2)}`;
+      document.getElementById("deliveryRuleNotice").innerText = pricing.manualReview
+        ? "More than 8 km: order will be sent for manual delivery-fee confirmation. Do not pay online until the final fee is confirmed."
+        : pricing.freeDeliveryEligible
+          ? "Launch offer applied: free delivery for orders ₹399+ within 3 km."
+          : "Delivery fee: 0–2 km ₹15, 2–4 km ₹25, 4–6 km ₹35, 6–8 km ₹45.";
+
+      // Render drawer items
+      const container = document.getElementById("cartItemsContainer");
+      if (!cart.length) {
+        container.innerHTML = `<p class="text-center py-10 text-slate-400 text-xs">Your basket is currently empty.</p>`;
+        return;
+      }
+       container.innerHTML = cart.map(item => `
+        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
+          <div class="flex-1 pr-2">
+            <h5 class="text-xs font-bold text-slate-800 leading-snug">${escapeHtml(item.name)}</h5>
+            <span class="text-xs font-black text-slate-900">₹${item.price * item.quantity}</span>
+            <span class="text-[10px] text-slate-400"> (₹${item.price} each)</span>
+          </div>
+
+          <div class="flex items-center gap-2 bg-white px-2 py-1 rounded-xl border border-slate-200">
+            <button onclick="modifyCartQuantity('${item.id}', -1)" class="w-6 h-6 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center text-xs font-bold">-</button>
+            <span class="text-xs font-bold w-4 text-center">${item.quantity}</span>
+            <button onclick="modifyCartQuantity('${item.id}', 1)" class="w-6 h-6 rounded-lg bg-orange-600 text-white hover:bg-orange-700 flex items-center justify-center text-xs font-bold">+</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function toggleCartDrawer(open) {
+      document.getElementById("cartDrawer").classList.toggle("hidden", !open);
+    }
+
+    function updatePaymentButton() {
+      const method = document.querySelector('input[name="paymentMethod"]:checked')?.value || "COD";
+      const btn = document.getElementById("btnPlaceOrder");
+      if (btn) btn.innerHTML = `<span>${method === "COD" ? "Place Order" : "Pay with " + (method === "PHONEPE" ? "PhonePe" : "Google Pay")}</span><i class="fa-solid fa-arrow-right text-xs"></i>`;
+    }
+
+    function resetPlaceOrderButton() {
+      const btn = document.getElementById("btnPlaceOrder");
+      btn.disabled = false;
+      updatePaymentButton();
+    }
+
+    function clearCartAfterOrder() {
+      cart = [];
+      cartRestaurantId = null;
+      updateCartUI();
+      toggleCartDrawer(false);
+    }
+
+    async function placeOrder() {
+      const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked')?.value || "COD";
+      if (!currentUser) {
+        alert("Please sign in first to place your order.");
+        return;
+      }
+      if (!cart.length) {
+        alert("Your basket is empty! Add items first.");
+        return;
+      }
+      const address = document.getElementById("checkoutAddress").value.trim();
+      const phone = document.getElementById("checkoutPhone").value.trim();
+      if (!address || !phone) {
+        alert("Please provide both delivery address and phone number.");
+        return;
+      }
+      const btn = document.getElementById("btnPlaceOrder");
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing...`;
+
+      const foodSubtotal = cart.reduce((sum, item) => sum + (Number(item.price) * Number(item.quantity)), 0);
+      const pricing = getDeliveryPricing(foodSubtotal);
+      if (pricing.manualReview && selectedPayment !== "COD") {
+        resetPlaceOrderButton();
+        alert("Orders over 8 km need manual delivery-fee confirmation. Please select Cash on Delivery; pay only after the final amount is confirmed.");
+        return;
+      }
+      const deliveryCharge = pricing.manualReview ? null : pricing.fee;
+      const totalAmount = foodSubtotal + (deliveryCharge || 0);
+      const deliveryFields = {
+        foodSubtotal,
+        deliveryDistanceKm: pricing.distanceKm,
+        deliveryDistanceSource: actualDeliveryDistanceKm !== null ? "OSRM_ROAD_ROUTE" : "CUSTOMER_ESTIMATE",
+        customerLatitude: customerDeliveryCoords?.latitude ?? null,
+        customerLongitude: customerDeliveryCoords?.longitude ?? null,
+        restaurantLatitude: approvedRestaurants[cartRestaurantId]?.latitude ?? null,
+        restaurantLongitude: approvedRestaurants[cartRestaurantId]?.longitude ?? null,
+        deliveryCharge,
+        deliveryFeeStatus: pricing.manualReview ? "MANUAL_CONFIRMATION_REQUIRED" : "CALCULATED",
+        freeDeliveryApplied: pricing.freeDeliveryEligible
+      };
+
+      if (selectedPayment === "PHONEPE" || selectedPayment === "GPAY") {
+        try {
+          const upiId = "9039290223@axl";
+          const orderRef = db.ref("orders").push();
+          const orderId = orderRef.key;
+          const orderPayload = {
+            customerUid: currentUser.uid,
+            restaurantId: cartRestaurantId,
+            deliveryUid: "",
+            items: cart,
+            ...deliveryFields,
+            totalAmount,
+            address,
+            phone,
+            status: "PAYMENT_PENDING",
+            paymentMode: selectedPayment,
+            paymentStatus: "VERIFY_REQUIRED",
+            upiId,
+            locationLink: customerDeliveryCoords ? `https://www.google.com/maps?q=${customerDeliveryCoords.latitude},${customerDeliveryCoords.longitude}` : "",
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          };
+          await orderRef.set(orderPayload);
+          const params = new URLSearchParams({
+            pa: upiId,
+            pn: "Jashpur Foodies",
+            am: totalAmount.toFixed(2),
+            cu: "INR",
+            tn: "Jashpur Foodies order " + orderId
+          });
+          const query = params.toString();
+          const appUrl = selectedPayment === "PHONEPE"
+            ? "phonepe://pay?" + query
+            : "tez://upi/pay?" + query;
+          clearCartAfterOrder();
+          resetPlaceOrderButton();
+          alert("Opening " + (selectedPayment === "PHONEPE" ? "PhonePe" : "Google Pay") + ". After paying ₹" + totalAmount.toFixed(2) + ", return to Jashpur Foodies. The restaurant must verify the payment manually; do not retry if money was deducted.");
+          location.href = appUrl;
+          return;
+        } catch (err) {
+          resetPlaceOrderButton();
+          alert(err.message || "Could not create the UPI order. Please try again.");
+          return;
+        }
+      }
+      const newOrderRef = db.ref("orders").push();
+      const orderPayload = {
+        customerUid: currentUser.uid,
+        restaurantId: cartRestaurantId,
+        deliveryUid: "",
+        items: cart,
+        ...deliveryFields,
+        totalAmount: totalAmount,
+        address: address,
+        phone: phone,
+        status: pricing.manualReview ? "MANUAL_DISTANCE_REVIEW" : "PLACED",
+        paymentMode: "COD",
+        paymentStatus: "PENDING",
+        locationLink: customerDeliveryCoords ? `https://www.google.com/maps?q=${customerDeliveryCoords.latitude},${customerDeliveryCoords.longitude}` : "",
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      newOrderRef.set(orderPayload)
+        .then(() => {
+          clearCartAfterOrder();
+          resetPlaceOrderButton();
+          alert(pricing.manualReview
+            ? "Delivery request submitted for manual review because the distance is over 8 km. Jashpur Foodies will confirm the delivery fee and final payable amount before dispatch."
+            : `Order placed successfully! Food ₹${foodSubtotal.toFixed(2)} + delivery ₹${deliveryCharge}. Total ₹${totalAmount.toFixed(2)}. Pay cash on delivery.`);
+          navigateTo("orders");
+        })
+        .catch(err => {
+          resetPlaceOrderButton();
+          alert("Error: " + err.message);
+        });
+    }
+
+    async function handlePhonePeReturn(user) {
+      const params = new URLSearchParams(location.search);
+      if (params.get("paymentReturn") !== "1") return;
+      const merchantOrderId = params.get("merchantOrderId");
+      history.replaceState({}, document.title, location.pathname);
+      if (!merchantOrderId || !user) return;
+      try {
+        const verifyPayment = functions.httpsCallable("verifyPhonePePayment");
+        const result = await verifyPayment({ merchantOrderId });
+        if (result.data?.verified) {
+          alert("Payment verified successfully. Your order has been placed!");
+        } else {
+          alert("Payment status: " + (result.data?.status || "PENDING") + ". If money was deducted, refresh Your Orders shortly before trying another payment.");
+        }
+        navigateTo("orders");
+        loadUserOrders();
+      } catch (err) {
+        alert("We could not verify the payment yet. Open Your Orders and try again shortly. " + (err.message || ""));
+        navigateTo("orders");
+      }
+    }
+
+    // --- 8. ORDERS VIEW & LIVE STATUS TRACKING ---
+    const ORDER_STEPS = [
+      { key: "PLACED", label: "Placed" },
+      { key: "ACCEPTED", label: "Accepted" },
+      { key: "PREPARING", label: "Preparing" },
+      { key: "READY_FOR_PICKUP", label: "Ready" },
+      { key: "PICKED_UP", label: "Picked Up" },
+      { key: "OUT_FOR_DELIVERY", label: "On The Way" },
+      { key: "DELIVERED", label: "Delivered" }
+    ];
+
+    function loadUserOrders() {
+      if (!currentUser) return;
+      
+      db.ref("orders").orderByChild("customerUid").equalTo(currentUser.uid).on("value", async (snap) => {
+        activeOrders = snap.val() || {};
+        renderOrders();
+      });
+    }
+    async function renderOrders() {
+      const container = document.getElementById("ordersContainer");
+      const list = Object.entries(activeOrders).sort((a,b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+
+      if (!list.length) {
+        container.innerHTML = `
+          <div class="py-12 text-center text-slate-400 text-xs bg-white rounded-3xl p-6 border border-slate-200/80">
+            <i class="fa-solid fa-receipt text-3xl mb-2 text-slate-300"></i>
+            <p>You haven't placed any orders yet.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Fetch delivery partner info if assigned
+      container.innerHTML = await Promise.all(list.map(async ([orderId, o]) => {
+        const restName = approvedRestaurants[o.restaurantId]?.name || "Restaurant Partner";
+        const currentStepIndex = ORDER_STEPS.findIndex(s => s.key === o.status);
+        const isCancelled = o.status === "CANCELLED";
+        const isDelivered = o.status === "DELIVERED";
+
+        let deliveryBoyInfoHtml = "";
+        if (o.deliveryUid) {
+          try {
+            const riderSnap = await db.ref(`deliveryPartners/${o.deliveryUid}`).once("value");
+            const rider = riderSnap.val() || {};
+            deliveryBoyInfoHtml = `
+              <div class="mt-3 p-3 bg-slate-50 border border-slate-200/70 rounded-2xl flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">
+                    <i class="fa-solid fa-person-biking"></i>
+                  </div>
+                  <div>
+                    <p class="text-xs font-extrabold text-slate-900">${escapeHtml(rider.name || 'Delivery Partner')}</p>
+                    <p class="text-[10px] text-slate-500">${escapeHtml(rider.phone || '')} • ${escapeHtml(rider.vehicle || 'Bike')}</p>
+                  </div>
+                </div>
+                ${o.locationLink ? `
+                  <a href="${escapeHtml(o.locationLink)}" target="_blank" class="px-3 py-1.5 bg-blue-600 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 shadow-sm hover:bg-blue-700 transition">
+                    <i class="fa-solid fa-location-arrow"></i>
+                    <span>Live Link</span>
+                  </a>
+                ` : `
+                  <span class="text-[10px] text-slate-400 font-semibold italic">No map link yet</span>
+                `}
+              </div>
+            `;
+          } catch(e) {
+            console.error(e);
+          }
+        }
+        return `
+          <div class="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-sm space-y-4">
+            
+            <!-- Header -->
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <span class="font-mono text-xs font-extrabold text-slate-900">Order #${orderId.substring(0, 8)}</span>
+                <h4 class="text-sm font-bold text-slate-700">${escapeHtml(restName)}</h4>
+              </div>
+              <div class="text-right">
+                <span class="text-xs font-black text-slate-900">₹${o.totalAmount}</span>
+                <span class="block text-[10px] font-extrabold text-orange-600">CASH ON DELIVERY</span>
+              </div>
+            </div>
+
+            <!-- Items summary -->
+            <div class="text-xs text-slate-600 space-y-1">
+              ${(o.items || []).map(i => `
+                <div class="flex justify-between">
+                  <span>${escapeHtml(i.name)} <strong class="text-slate-400">&times; ${i.quantity}</strong></span>
+                  <span class="font-semibold">₹${i.price * i.quantity}</span>
+                </div>
+              `).join('')}
+            </div>
+
+            <!-- Progress Tracker -->
+            ${!isCancelled ? `
+              <div class="pt-2">
+                <div class="flex items-center justify-between text-[10px] font-extrabold text-slate-400 mb-2 overflow-x-auto gap-1">
+                  ${ORDER_STEPS.map((s, idx) => {
+                    const done = idx <= currentStepIndex;
+                    const active = idx === currentStepIndex;
+                    const color = active ? 'text-orange-600 font-black' : done ? 'text-emerald-600' : 'text-slate-300';
+                    return `<span class="${color} shrink-0">${s.label}</span>`;
+                  }).join('<span class="text-slate-200">&rarr;</span>')}
+                </div>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div class="bg-gradient-to-r from-orange-500 to-emerald-500 h-full rounded-full transition-all duration-500" 
+                    style="width: ${((currentStepIndex + 1) / ORDER_STEPS.length) * 100}%"></div>
+                </div>
+              </div>
+            ` : `
+              <div class="p-2.5 rounded-xl bg-red-50 text-red-700 text-xs font-bold flex items-center gap-2">
+                <i class="fa-solid fa-circle-xmark"></i>
+                <span>This order was cancelled.</span>
+              </div>
+            `}
+             <!-- Delivery Boy info & manual location link -->
+            ${deliveryBoyInfoHtml}
+
+            <!-- Bottom Actions: Reorder & Rate -->
+            <div class="pt-2 flex items-center justify-between gap-2 border-t border-slate-100">
+              <span class="text-[10px] text-slate-400">${new Date(o.createdAt || Date.now()).toLocaleString()}</span>
+              <div class="flex gap-2">
+                ${isDelivered ? `
+                  <button onclick="openRatingModal('${orderId}')" class="px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-xs font-bold hover:bg-amber-100 transition flex items-center gap-1">
+                    <i class="fa-regular fa-star"></i> Rate
+                  </button>
+                ` : ''}
+                <button onclick='reorderItems(${JSON.stringify(o.items || [])}, "${o.restaurantId}")' class="px-3 py-1.5 bg-orange-50 text-orange-600 rounded-xl text-xs font-bold hover:bg-orange-100 transition">
+                  <i class="fa-solid fa-repeat text-[10px] mr-1"></i> Reorder
+                </button>
+              </div>
+            </div>
+
+          </div>
+        `;
+      })).then(renderedArr => renderedArr.join(''));
+    }
+
+    function reorderItems(items, restaurantId) {
+      if (!items || !items.length) return;
+      cart = [...items];
+      cartRestaurantId = restaurantId;
+      updateCartUI();
+      toggleCartDrawer(true);
+    }
+    // --- 9. RATINGS & REVIEWS ---
+    function openRatingModal(orderId) {
+      ratingOrderId = orderId;
+      selectedRatingStars = 5;
+      updateStarDisplay(5);
+      document.getElementById("reviewText").value = "";
+      document.getElementById("ratingModal").classList.remove("hidden");
+    }
+
+    function closeRatingModal() {
+      document.getElementById("ratingModal").classList.add("hidden");
+    }
+
+    function setRating(stars) {
+      selectedRatingStars = stars;
+      updateStarDisplay(stars);
+    }
+
+    function updateStarDisplay(stars) {
+      const starIcons = document.querySelectorAll("#starContainer i");
+      starIcons.forEach((icon, idx) => {
+        if (idx < stars) {
+          icon.className = "fa-solid fa-star text-amber-400 cursor-pointer";
+        } else {
+          icon.className = "fa-regular fa-star text-slate-300 cursor-pointer";
+        }
+      });
+    }
+
+    function submitReview() {
+      if (!ratingOrderId) return;
+      const review = document.getElementById("reviewText").value.trim();
+
+      db.ref(`orders/${ratingOrderId}`).update({
+        rating: selectedRatingStars,
+        review: review,
+        reviewedAt: Date.now()
+      }).then(() => {
+        alert("Thank you for your rating!");
+        closeRatingModal();
+      }).catch(err => alert("Error: " + err.message));
+    }
+
+    // --- 10. NAVIGATION ROUTING ---
+    function navigateTo(view) {
+      // Hide all views
+      document.getElementById("viewHome").classList.add("hidden");
+      document.getElementById("viewRestaurantMenu").classList.add("hidden");
+      document.getElementById("viewOrders").classList.add("hidden");
+      document.getElementById("viewProfile").classList.add("hidden");
+
+      // Show selected
+      if (view === 'home') document.getElementById("viewHome").classList.remove("hidden");
+      if (view === 'restaurantMenu') document.getElementById("viewRestaurantMenu").classList.remove("hidden");
+      if (view === 'orders') {
+        document.getElementById("viewOrders").classList.remove("hidden");
+        loadUserOrders();
+      }
+      if (view === 'profile') document.getElementById("viewProfile").classList.remove("hidden");
+
+      // Update Nav Button Styles
+      document.querySelectorAll(".nav-btn").forEach(btn => {
+        btn.classList.remove("text-orange-600");
+        btn.classList.add("text-slate-400");
+      });
+      const activeNavBtn = document.getElementById(`navBtn-${view}`);
+      if (activeNavBtn) {
+        activeNavBtn.classList.remove("text-slate-400");
+        activeNavBtn.classList.add("text-orange-600");
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // --- UTILITIES ---
+    function escapeHtml(string) {
+      if (!string) return '';
+      return String(string)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+        
+
+
+      
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
