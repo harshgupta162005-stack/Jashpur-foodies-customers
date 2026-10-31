@@ -31,7 +31,7 @@
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased min-h-screen pb-24 md:pb-10">
  <!-- ================= AUTH MODAL / VIEW ================= -->
-  <div id="authContainer" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+  <div id="authContainer" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 max-h-[92vh] overflow-y-auto hide-scrollbar">
       <div class="text-center mb-6">
         <div class="w-14 h-14 bg-orange-600 rounded-2xl mx-auto flex items-center justify-center text-white text-2xl shadow-lg shadow-orange-500/30 mb-3">
@@ -443,20 +443,33 @@
     let selectedRatingStars = 5;
 
     // --- 2. AUTH FLOW ---
-    auth.onAuthStateChanged((user) => {
-      const authContainer = document.getElementById("authContainer");
-      if (user) {
-        currentUser = user;
-        authContainer.classList.add("hidden");
-        loadCustomerProfile(user.uid);
-        initRealtimeApp();
-        handlePhonePeReturn(user);
-      } else {
-        currentUser = null;
-        customerProfile = null;
-        authContainer.classList.remove("hidden");
-      }
-    });
+    // Keep the Firebase session on this device, including after app restart.
+    // Wait for persistence setup before observing the first auth state.
+    function startAuthStateListener() {
+      auth.onAuthStateChanged((user) => {
+        const authContainer = document.getElementById("authContainer");
+        if (user) {
+          currentUser = user;
+          authContainer.classList.add("hidden");
+          loadCustomerProfile(user.uid);
+          initRealtimeApp();
+          handlePhonePeReturn(user);
+        } else {
+          currentUser = null;
+          customerProfile = null;
+          authContainer.classList.remove("hidden");
+        }
+      });
+    }
+
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+      .then(startAuthStateListener)
+      .catch((error) => {
+        console.warn("Could not enable LOCAL auth persistence:", error);
+        // Still allow sign-in if this WebView blocks persistent storage.
+        startAuthStateListener();
+      });
+
      function toggleAuthTab(tab) {
       const isLogin = tab === 'login';
       document.getElementById("tabBtnLogin").className = isLogin 
